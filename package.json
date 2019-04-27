@@ -21,7 +21,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.16.4",
-    "helmet": "^3.16.0"
+    "helmet": "^3.16.0",
+    "mongodb": "^3.2.3"
   },
   "devDependencies": {
     "dotenv": "^7.0.0"
