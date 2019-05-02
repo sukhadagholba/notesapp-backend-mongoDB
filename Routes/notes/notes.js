@@ -4,7 +4,10 @@ const multer = require('multer');
 const upload = multer({ dest: __dirname + '/files/' });
 const fs = require('fs');
 const cloudinary = require('cloudinary');
-require('dotenv').config();
+
+if(process.env.ENVIRONMENT!=='production'){
+	require('dotenv').config();
+}	
 
 cloudinary.config({
   cloud_name:process.env.cloud_name,
@@ -22,11 +25,11 @@ router.get('/', async (req, res) => {
     	res.status(200).json(items);
    })
    .catch(err => {
-  	res.status(500).json(err);
+  	res.status(500).json({error:err});
    })
 
   } catch (err) {
-    res.status(500).json({error: err.message});
+    res.status(500).json({error: err});
   }
 });
 
@@ -34,15 +37,14 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
 try{    
         const db = await req.app.locals.db;
-        const {id} = req.params;
-        const ObjectId = require('mongodb').ObjectId;
+        const ObjectId = require('mongodb').ObjectId;  //_id's are stored as ObjectID identifier in mongoDB 
 
         db.collection('notes').findOne({_id: new ObjectId (req.params.id)})
         .then(result => {
                 res.status(200).json(result);
         })
-        .catch(error => {
-                res.status(500).json({error: error.message});
+        .catch(err => {
+                res.status(500).json({error: err});
         })
 }catch(err){
     console.log(err);
@@ -76,7 +78,7 @@ router.post('/', upload.single('file'), async (req, res) => {
                 res.status(200).json(result.insertedId);
         })
         .catch(err => {
-                res.status(500).json(err.message);
+                res.status(500).json({error: err});
         })
         })
 }else{
@@ -88,7 +90,7 @@ router.post('/', upload.single('file'), async (req, res) => {
         })
         .catch(err => {
                 console.log(err);
-                res.status(500).json(err);
+                res.status(500).json({error:err});
         })
         }
 
@@ -98,18 +100,46 @@ router.post('/', upload.single('file'), async (req, res) => {
   }
 });
 
+
+router.put('/:id', async (req, res) => {
+try{	
+	const db = await req.app.locals.db;
+	const ObjectId = require('mongodb').ObjectId;
+
+	db.collection('notes').findOneAndUpdate(
+		{ "_id" : new ObjectId (req.params.id)}, 
+		{$set:
+		{"title": req.body.title, 
+		"content":req.body.content}},
+		{returnOriginal: false}  //node.js driver returns the original document by defaul, set it to false to get the updated document	
+		)	
+	.then(result => {
+		res.status(200).json(result);
+	})
+	.catch(err =>{
+		console.log(err);
+                res.status(500).json({error:err});	
+	})
+
+}catch(err){
+    console.log(err);
+    res.status(500).json({error: err});	
+}
+
+});
+
+
 router.delete('/:id', async (req, res) => {
 try{
         const db = await req.app.locals.db;
-        const {id} = req.params;
         const ObjectId = require('mongodb').ObjectId;
 
         db.collection('notes').deleteOne({_id: new ObjectId (req.params.id)})
         .then(deletedDocument => {
                 res.status(200).json(deletedDocument);
         })
-        .catch(error => {
-                res.status(500).json({error: error.message});
+        .catch(err => {
+                res.status(500).json({error: err});
         })
 }catch(err){
     console.log(err);
