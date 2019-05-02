@@ -49,7 +49,55 @@ try{
     console.log(err);
     res.status(500).json({error: err});
 }
-})
+});
+
+
+router.post('/', upload.single('file'), async (req, res) => {
+  try {
+    const db = await req.app.locals.db;
+    //console.log('req.file.path', req.file.path);
+
+    const { title, content } = req.body;
+    let imgUrl="";
+
+        if(req.file){
+
+        cloudinary.uploader.upload(req.file.path,(result) =>{
+                console.log('result inside cloudinary', result);
+                imgUrl = result.secure_url;
+        })
+        .then(() =>{
+
+        console.log(imgUrl);
+        const image=imgUrl;
+        const note = {title, content, image};
+
+        db.collection('notes').insertOne({title, content, image})
+        .then(result => {
+                res.status(200).json(result.insertedId);
+        })
+        .catch(err => {
+                res.status(500).json(err.message);
+        })
+        })
+}else{
+        console.log('inside else');
+
+        db.collection('notes').insertOne({title, content })
+        .then(result => {
+                res.status(200).json(result.insertedId);
+        })
+        .catch(err => {
+                console.log(err);
+                res.status(500).json(err);
+        })
+        }
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({error: err});
+  }
+});
 
 
 module.exports = router;
